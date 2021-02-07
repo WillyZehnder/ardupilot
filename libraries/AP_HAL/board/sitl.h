@@ -69,3 +69,5 @@
 #define HAL_BOARD_STORAGE_DIRECTORY "."
 #endif
 
+#define MISSION_RELATIVE 1
+
