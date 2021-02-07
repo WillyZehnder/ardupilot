@@ -71,3 +71,5 @@
 #define HAL_BOARD_STORAGE_DIRECTORY "."
 #endif
 
+#define MISSION_RELOCATE_ENABLED 1
+
