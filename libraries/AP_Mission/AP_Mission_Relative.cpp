@@ -82,28 +82,6 @@ void AP_Mission_Relative::memorize_basepoint(void)
     }
     AP_Mission::Mission_Command tmp_command;
 
-    // check if one of the Waypoints has (terrain_alt == 1) -> currently no translation allowed
-    uint16_t i=0;
-    while (AP::mission()->get_next_nav_cmd(i, tmp_command) && (_translation.do_translation) && (tmp_command.id != MAV_CMD_DO_LAND_START)) { // advance to the next command
-        // check if Waypoint with Location
-        if (!(tmp_command.content.location.lat == 0 && tmp_command.content.location.lng == 0)) {
-            switch (tmp_command.id) { // no translation for TAKEOFF or LAND commands
-                case MAV_CMD_NAV_TAKEOFF:
-                case MAV_CMD_NAV_LAND:
-                case MAV_CMD_NAV_VTOL_TAKEOFF:
-                case MAV_CMD_NAV_VTOL_LAND:
-                    break;
-                default:
-                    if (tmp_command.content.location.terrain_alt == 1) {
-                        _translation.do_translation = false;
-                        gcs().send_text(MAV_SEVERITY_NOTICE, "MR: terrain_alt -> NO RELOCATION POSSIBLE");
-                        return;
-                    }
-            }
-        }
-        i++;// move on to next command
-    }
-
     // no translation if the distance to Homepoint is too small
     tmp_command.content.location = AP::ahrs().get_home();
     float tmp_distance = tmp_command.content.location.get_distance(_basepoint_loc); // in [m]
@@ -120,10 +98,6 @@ void AP_Mission_Relative::memorize_basepoint(void)
     else {
             _translation.direction = 0;
     }
-
-    // altitude of Homepoint, necessary for calculation of altitude-adaption
-    _translation.alt = tmp_command.content.location.alt;
-
     gcs().send_text(MAV_SEVERITY_INFO, "Restart of relocated Mission");
 }
 
@@ -142,14 +116,6 @@ void AP_Mission_Relative::move_location(Location& loc, const uint16_t id)
             case MAV_CMD_NAV_VTOL_LAND:
                 break;
             default:
-                // check, if WP with terrain_alt == 1 has been loaded on the fly
-                if (loc.terrain_alt == 1) {
-                    if (!AP::ahrs().get_position(loc)) { // skip Waypoint by setting just location to target location
-                        _translation.do_translation = false;
-                    }
-                    gcs().send_text(MAV_SEVERITY_NOTICE, "MR: terrain_alt -> WP skipped");
-                    return;
-                }
                 // calculate parallel translation and corresponding values just once at first Waypoint
                 if ((!_translation.calculated)&&(_restart_behaviour >= Restart_Behaviour::RESTART_PARALLEL_TRANSLATED)) {
 
@@ -158,15 +124,16 @@ void AP_Mission_Relative::move_location(Location& loc, const uint16_t id)
                     _first_wp_loc = loc; // memorize NOT translated position of very first WayPoint
 
                     // calculate altitude-translation
-                    if (loc.relative_alt == 1) {
-                        _translation.alt = _basepoint_loc.alt - loc.alt - _translation.alt; // subtract Home-Altitude if WP-altitude is relative to
-                    } else {
-                        _translation.alt = _basepoint_loc.alt - loc.alt;
+                    if (!_basepoint_loc.change_alt_frame(loc.get_alt_frame())) {
+                        _translation.do_translation = false;
+                        return;
                     }
+                    _translation.alt = _basepoint_loc.alt - loc.alt;
                     if (_translation.alt < 0) { // allow just positive offsets for altitude
                         _translation.alt = 0;
                     }
-                    if (!AP::ahrs().get_position(loc)) { //  // set just location to target to avoid additional loop for very quick vehicles or small WP_RADIUS
+                    gcs().send_text(MAV_SEVERITY_INFO, "MR: altitude translation: +%dm", _translation.alt/100);
+                    if (!AP::ahrs().get_position(loc)) { //  // set current location to target to avoid additional loop for very quick vehicles or small WP_RADIUS
                         _translation.do_translation = false;
                     }
                 } else {
