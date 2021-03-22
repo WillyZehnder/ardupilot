@@ -191,7 +191,7 @@ public:
         EKF_POS_SOURCE =      90, // change EKF position source between primary, secondary and tertiary sources
         ARSPD_CALIBRATE=      91, // calibrate airspeed ratio 
         FBWA =                92, // Fly-By-Wire-A
-        RELOCATE_MISSION =    93, // used in separate branch MISSION_RELATIVE
+        RELOCATE_MISSION =    93, // used in separate branch
         VTX_POWER =           94, // VTX power level
 
         // entries from 100 onwards are expected to be developer
