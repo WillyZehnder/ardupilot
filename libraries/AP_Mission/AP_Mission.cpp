@@ -69,7 +69,7 @@ void AP_Mission::start()
 
     reset(); // reset mission to the first command, resets jump tracking
 
-#if MISSION_RELATIVE == 1
+#ifdef MISSION_RELOCATE_ENABLED
     mission_relative.memorize_basepoint(); // memorize location and attitudes where Mode AUTO was switched on (so-called Basepoint)
 #endif
 
@@ -1654,7 +1654,7 @@ bool AP_Mission::advance_current_nav_cmd(uint16_t starting_index)
             // save separate previous nav command index if it contains lat,long,alt
             if (!(cmd.content.location.lat == 0 && cmd.content.location.lng == 0)) {
                 _prev_nav_cmd_wp_index = _nav_cmd.index;
-#if MISSION_RELATIVE == 1
+#ifdef MISSION_RELOCATE_ENABLED
                 // move Waypoint-Location
                 mission_relative.move_location(cmd.content.location, cmd.id);
 #endif
@@ -1683,7 +1683,7 @@ bool AP_Mission::advance_current_nav_cmd(uint16_t starting_index)
         } else {
             // set current do command and start it (if not already set)
             if (!_flags.do_cmd_loaded) {
-#if MISSION_RELATIVE == 1
+#ifdef MISSION_RELOCATE_ENABLED
                 if (cmd.id == MAV_CMD_DO_LAND_START) {
                     mission_relative.set_no_translation(); // no translation of landing-locations
                 }

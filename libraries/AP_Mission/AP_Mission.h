@@ -20,12 +20,8 @@
 #include <AP_Param/AP_Param.h>
 #include <StorageManager/StorageManager.h>
 #include <AP_Vehicle/ModeReason.h>
-#ifdef MISSION_RELATIVE
-    #if MISSION_RELATIVE == 1
-        #include <AP_Mission/AP_Mission_Relative.h>
-    #endif
-#else
-   #define MISSION_RELATIVE 0
+#ifdef MISSION_RELOCATE_ENABLED
+    #include <AP_Mission/AP_Mission_Relative.h>
 #endif
 
 // definitions
@@ -57,7 +53,7 @@
 class AP_Mission
 {
 
-#if MISSION_RELATIVE == 1
+#ifdef MISSION_RELOCATE_ENABLED
     friend class AP_Mission_Relative;
     AP_Mission_Relative mission_relative;
 #endif
