@@ -23,6 +23,10 @@
 #include <AP_Common/Location.h>
 #include <AP_Param/AP_Param.h>
 #include <StorageManager/StorageManager.h>
+#include <AP_Vehicle/ModeReason.h>
+#ifdef MISSION_RELOCATE_ENABLED
+    #include <AP_Mission/AP_Mission_Relative.h>
+#endif
 
 // definitions
 #define AP_MISSION_EEPROM_VERSION           0x65AE  // version number stored in first four bytes of eeprom.  increment this by one when eeprom format is changed
@@ -52,6 +56,11 @@
 /// @brief    Object managing Mission
 class AP_Mission
 {
+
+#ifdef MISSION_RELOCATE_ENABLED
+    friend class AP_Mission_Relative;
+    AP_Mission_Relative mission_relative;
+#endif
 
 public:
     // jump command structure
