@@ -1,0 +1,5 @@
+# version with MISSION_RELOCATE_ENABLED of MatekF405-Wing for testing
+
+include ../MatekF405-Wing/hwdef.dat
+
+define MISSION_RELOCATE_ENABLED 1
