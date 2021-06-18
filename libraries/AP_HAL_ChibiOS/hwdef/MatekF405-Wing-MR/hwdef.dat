@@ -2,4 +2,7 @@
 
 include ../MatekF405-Wing/hwdef.dat
 
+undef HAL_SOARING_ENABLED
+
+define HAL_SOARING_ENABLED 1
 define MISSION_RELOCATE_ENABLED 1
