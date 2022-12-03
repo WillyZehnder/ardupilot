@@ -198,3 +198,5 @@ define HAL_PICCOLO_CAN_ENABLE 0
 
 include ../include/minimize_fpv_osd.inc
 
+include ./extra_hwdef.dat
+define RELOCATE_MISSION_ENABLED 1
