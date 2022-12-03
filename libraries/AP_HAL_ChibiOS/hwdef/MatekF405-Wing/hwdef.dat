@@ -212,3 +212,5 @@ define HAL_PICCOLO_CAN_ENABLE 0
 # only include ublox GPS driver
 include ../include/minimal_GPS.inc
 
+include ./extra_hwdef.dat
+define RELOCATE_MISSION_ENABLED 1
