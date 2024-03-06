@@ -1458,6 +1458,7 @@ bool RC_Channel::do_aux_function(const aux_func_t ch_option, const AuxSwitchPos 
 #endif
 
     // do nothing for these functions
+    case AUX_FUNC::RELOCATE_MISSION: // to avoid SEVERITY_INFO
     case AUX_FUNC::MOUNT1_ROLL:
     case AUX_FUNC::MOUNT1_PITCH:
     case AUX_FUNC::MOUNT1_YAW:
