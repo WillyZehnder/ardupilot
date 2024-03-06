@@ -14,8 +14,11 @@
  */
 /*
  *   Created: 08.05.2020
- *    Author: Dipl.Ing.(FH) WillyZehnder
+ *    Author: Dipl.Ing.(FH) Willy Zehnder
  */
+
+// 2024-03-05: rotation always against the wind-direction (wind_estimate)
+
 /// @file    AP_Relocate_Mission.cpp
 /// @brief   translates and rotates Missions according to the location and heading where Mode-AUTO has been switched on
 
@@ -99,7 +102,16 @@ void AP_Relocate_Mission::memorize_basepoint(void)
 
     // get amount of rotation
     if (_restart_behaviour == Restart_Behaviour::RESTART_ROTATED_HEADING) {
-        _translation.direction = AP::ahrs().yaw_sensor; // rotation via heading at Basepoint
+        //_translation.direction = AP::ahrs().yaw_sensor; // rotation via heading of vehicle at Basepoint ####
+
+        Vector3f wind = AP::ahrs().wind_estimate();
+        Vector2f wind_xy;
+        wind_xy.x = wind.x;
+        wind_xy.y = wind.y;
+        float windspeed = wind_xy.length();
+        float winddeg = wrap_360(wind_xy.angle()*180.0/M_PI+180.0);
+        gcs().send_text(MAV_SEVERITY_INFO, "Wind %4.1f m/s %4.0f deg", windspeed, winddeg);
+        _translation.direction = winddeg*100; // rotation against the wind ####
     }
     else {
             _translation.direction = 0;
