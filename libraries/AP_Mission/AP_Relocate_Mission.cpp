@@ -18,6 +18,7 @@
  */
 
 // 2024-03-05: rotation always against the wind-direction (wind_estimate)
+// 2024-03-14: send only one line gcs().send_text, because of suppressing following lines by some GCS (e.g. yaapu)
 
 /// @file    AP_Relocate_Mission.cpp
 /// @brief   translates and rotates Missions according to the location and heading where Mode-AUTO has been switched on
@@ -95,12 +96,14 @@ void AP_Relocate_Mission::memorize_basepoint(void)
     tmp_command.content.location = AP::ahrs().get_home();
     float tmp_distance = tmp_command.content.location.get_distance(_basepoint_loc); // in [m]
     if (tmp_distance < _no_translation_radius) {
-        gcs().send_text(MAV_SEVERITY_NOTICE, "RM: distance to Home: %.1fm -> NO Translation", tmp_distance);
+        gcs().send_text(MAV_SEVERITY_NOTICE, "RM:distance to Home: %.1fm -> NO Translation", tmp_distance);
         _translation.do_translation = false;
         return;
     }
     else {
-        gcs().send_text(MAV_SEVERITY_INFO, "RM: Translation");
+        if (_restart_behaviour == Restart_Behaviour::RESTART_PARALLEL_TRANSLATED) {
+            gcs().send_text(MAV_SEVERITY_INFO, "RM:Translation");
+        }
     }
 
     // get amount of rotation
@@ -113,13 +116,13 @@ void AP_Relocate_Mission::memorize_basepoint(void)
         wind_xy.y = wind.y;
         float windspeed = wind_xy.length() * 3.6;
         float winddeg = wrap_360(wind_xy.angle()*180.0/M_PI+180.0);
-        gcs().send_text(MAV_SEVERITY_INFO, "RM: Rotation (Wind %4.0f deg %4.1f Kmh)", winddeg, windspeed);
+        gcs().send_text(MAV_SEVERITY_INFO, "RM:Rotation (Wind %4.0f deg %4.1f Kmh)", winddeg, windspeed);
         _translation.direction = winddeg*100; // rotation against the wind ####
     }
     else {
             _translation.direction = 0;
     }
-    gcs().send_text(MAV_SEVERITY_INFO, "RM: Restart of relocated Mission");
+    gcs().send_text(MAV_SEVERITY_INFO, "RM:Restart of relocated Mission");
 }
 
 void AP_Relocate_Mission::set_no_translation() {
@@ -147,7 +150,7 @@ void AP_Relocate_Mission::move_location(Location& loc, const uint16_t id)
                     if (_translation.alt < 0) { // allow just positive offsets for altitude
                         _translation.alt = 0;
                     }
-                    gcs().send_text(MAV_SEVERITY_INFO, "RM: altitude translation: +%d m", (int)_translation.alt/100);
+                    gcs().send_text(MAV_SEVERITY_INFO, "RM:altitude translation: +%d m", (int)_translation.alt/100);
                     if (!AP::ahrs().get_location(loc)) { //  // set current location to target to avoid additional loop for very quick vehicles or small WP_RADIUS
                         _translation.do_translation = false;
                         return;
