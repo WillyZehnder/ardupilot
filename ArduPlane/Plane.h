@@ -1224,6 +1224,14 @@ private:
     // last target alt we passed to tecs
     int32_t tecs_target_alt_cm;
 
+#ifdef RELOCATE_MISSION_ENABLED
+   #if RELOCATE_MISSION_ENABLED == 1
+    // for realizing a more than 1 second message to GCS
+	const uint32_t  REPEAT_ms       = 1000 * 30;
+    uint32_t        last_message_ms = 0;
+   #endif
+#endif
+
 public:
     void failsafe_check(void);
 #if AP_SCRIPTING_ENABLED

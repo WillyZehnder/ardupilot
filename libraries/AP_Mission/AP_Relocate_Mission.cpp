@@ -116,7 +116,7 @@ void AP_Relocate_Mission::memorize_basepoint(void)
         wind_xy.y = wind.y;
         float windspeed = wind_xy.length() * 3.6;
         float winddeg = wrap_360(wind_xy.angle()*180.0/M_PI+180.0);
-        gcs().send_text(MAV_SEVERITY_INFO, "RM:Rotation (Wind %4.0f deg %4.1f Kmh)", winddeg, windspeed);
+        gcs().send_text(MAV_SEVERITY_INFO, "RM:Rotation (Wind %4.0fdeg %4.1fKmh)", winddeg, windspeed);
         _translation.direction = winddeg*100; // rotation against the wind ####
     }
     else {

@@ -349,6 +349,27 @@ void Plane::one_second_loop()
         !is_equal(G_Dt, scheduler.get_loop_period_s())) {
         INTERNAL_ERROR(AP_InternalError::error_t::flow_of_control);
     }
+
+#ifdef RELOCATE_MISSION_ENABLED
+   #if RELOCATE_MISSION_ENABLED == 1
+    // send wind_estimate values to GCS if "rotation against the wind" is selected via switch
+    if ((last_message_ms + REPEAT_ms) < AP_HAL::millis()) {
+        last_message_ms = AP_HAL::millis();
+        RC_Channel *c = rc().find_channel_for_option(RC_Channel::AUX_FUNC::RELOCATE_MISSION);
+        if (c != nullptr) {
+            if ((c->get_aux_switch_pos()) == RC_Channel::AuxSwitchPos::HIGH) {
+                Vector3f wind = AP::ahrs().wind_estimate();
+                Vector2f wind_xy;
+                wind_xy.x = wind.x;
+                wind_xy.y = wind.y;
+                float windspeed = wind_xy.length() * 3.6;
+                float winddeg = wrap_360(wind_xy.angle()*180.0/M_PI+180.0);
+                gcs().send_text(MAV_SEVERITY_INFO, "Wind %4.0fdeg %4.1fKmh", winddeg, windspeed);
+            }
+        }
+    }
+   #endif
+#endif
 }
 
 void Plane::three_hz_loop()
