@@ -37,9 +37,9 @@ private:
     static AP_Relocate_Mission *_singleton;
 
     enum class Restart_Behaviour {
-        RESTART_NOT_TRANSLATED,
         RESTART_PARALLEL_TRANSLATED,
-        RESTART_ROTATED_HEADING
+        RESTART_ROTATED_HEADING,
+        RESTART_ROTATED_WIND
     };
 
     // for lat/lng translation of a Relative Mission

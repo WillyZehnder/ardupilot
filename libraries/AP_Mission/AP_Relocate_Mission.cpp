@@ -60,27 +60,7 @@ void AP_Relocate_Mission::memorize_basepoint(void)
 #else
   #define NO_TRANSLATION_RADIUS 5
 #endif
-
     _no_translation_radius = NO_TRANSLATION_RADIUS;
-
-    RC_Channel *c = rc().find_channel_for_option(RC_Channel::AUX_FUNC::RELOCATE_MISSION);
-    _restart_behaviour = Restart_Behaviour::RESTART_NOT_TRANSLATED;
-    if (c != nullptr) {
-        switch (c->get_aux_switch_pos()) {
-        case RC_Channel::AuxSwitchPos::LOW:
-            break;
-        case RC_Channel::AuxSwitchPos::MIDDLE:
-            _restart_behaviour = Restart_Behaviour::RESTART_PARALLEL_TRANSLATED;
-            break;
-        case RC_Channel::AuxSwitchPos::HIGH:
-            _restart_behaviour = Restart_Behaviour::RESTART_ROTATED_HEADING;
-            break;
-        }
-    }
-    if (_restart_behaviour == Restart_Behaviour::RESTART_NOT_TRANSLATED) {
-        _translation.do_translation = false;
-        return;
-    }
 
     _translation.calculated = false;
     _translation.do_translation = true;
@@ -90,9 +70,9 @@ void AP_Relocate_Mission::memorize_basepoint(void)
         _translation.do_translation = false;
         return;
     }
-    AP_Mission::Mission_Command tmp_command;  
 
     // no translation if the distance to Homepoint is too small
+    AP_Mission::Mission_Command tmp_command;  
     tmp_command.content.location = AP::ahrs().get_home();
     float tmp_distance = tmp_command.content.location.get_distance(_basepoint_loc); // in [m]
     if (tmp_distance < _no_translation_radius) {
@@ -100,29 +80,34 @@ void AP_Relocate_Mission::memorize_basepoint(void)
         _translation.do_translation = false;
         return;
     }
-    else {
-        if (_restart_behaviour == Restart_Behaviour::RESTART_PARALLEL_TRANSLATED) {
+
+    RC_Channel *c = rc().find_channel_for_option(RC_Channel::AUX_FUNC::RELOCATE_MISSION);
+    _restart_behaviour = Restart_Behaviour::RESTART_ROTATED_WIND; // default, if no switch
+    if (c != nullptr) {
+        switch (c->get_aux_switch_pos()) {
+        case RC_Channel::AuxSwitchPos::LOW:
+            _restart_behaviour = Restart_Behaviour::RESTART_PARALLEL_TRANSLATED;
             gcs().send_text(MAV_SEVERITY_INFO, "RM:Translation");
+            _translation.direction = 0;
+            break;
+        case RC_Channel::AuxSwitchPos::MIDDLE:
+            _restart_behaviour = Restart_Behaviour::RESTART_ROTATED_HEADING; // rotation via heading of vehicle
+            _translation.direction = AP::ahrs().yaw_sensor;
+            gcs().send_text(MAV_SEVERITY_INFO, "RM:Rotation (Heading %3ddeg)", (int16_t)_translation.direction/100);
+            break;
+        case RC_Channel::AuxSwitchPos::HIGH:
+            _restart_behaviour = Restart_Behaviour::RESTART_ROTATED_WIND; // rotation against the wind
+            Vector3f wind = AP::ahrs().wind_estimate();
+            Vector2f wind_xy;
+            wind_xy.x = wind.x;
+            wind_xy.y = wind.y;
+            float windspeed = wind_xy.length() * 3.6;
+            float winddeg = wrap_360(wind_xy.angle()*180.0/M_PI+180.0);
+            gcs().send_text(MAV_SEVERITY_INFO, "RM:Rotation (Wind %3.0fdeg %4.1fKmh)", winddeg, windspeed);
+            _translation.direction = winddeg*100;
+            break;
         }
     }
-
-    // get amount of rotation
-    if (_restart_behaviour == Restart_Behaviour::RESTART_ROTATED_HEADING) {
-        //_translation.direction = AP::ahrs().yaw_sensor; // former rotation via heading of vehicle at Basepoint ####
-
-        Vector3f wind = AP::ahrs().wind_estimate();
-        Vector2f wind_xy;
-        wind_xy.x = wind.x;
-        wind_xy.y = wind.y;
-        float windspeed = wind_xy.length() * 3.6;
-        float winddeg = wrap_360(wind_xy.angle()*180.0/M_PI+180.0);
-        gcs().send_text(MAV_SEVERITY_INFO, "RM:Rotation (Wind %4.0fdeg %4.1fKmh)", winddeg, windspeed);
-        _translation.direction = winddeg*100; // rotation against the wind ####
-    }
-    else {
-            _translation.direction = 0;
-    }
-    gcs().send_text(MAV_SEVERITY_INFO, "RM:Restart of relocated Mission");
 }
 
 void AP_Relocate_Mission::set_no_translation() {
@@ -160,7 +145,7 @@ void AP_Relocate_Mission::move_location(Location& loc, const uint16_t id)
                     if (_restart_behaviour >= Restart_Behaviour::RESTART_PARALLEL_TRANSLATED){ // do parallel translation
                         AP_Relocate_Mission::translate_location(loc);
                     }
-                    if (_restart_behaviour == Restart_Behaviour::RESTART_ROTATED_HEADING){ // do additional rotation
+                    if ((_restart_behaviour == Restart_Behaviour::RESTART_ROTATED_HEADING) | (_restart_behaviour == Restart_Behaviour::RESTART_ROTATED_WIND)) { // do additional rotation
                         AP_Relocate_Mission::rotate_location(loc);
                     }
                 }
