@@ -6,7 +6,7 @@
 
 #include "ap_version.h"
 
-#define THISFIRMWARE "Plane-4.4.4 RM2.1_beta"
+#define THISFIRMWARE "Plane-4.4.4 RM2.1"
 
 // the following line is parsed by the autotest scripts
 #define FIRMWARE_VERSION 4,4,4,FIRMWARE_VERSION_TYPE_OFFICIAL
